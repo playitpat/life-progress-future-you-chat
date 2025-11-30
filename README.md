@@ -3,6 +3,7 @@
 
 🔗 **Live App:** [https://life-progress-dashboard.streamlit.app/](https://playitpat-life-progress-future-you-chat-app-kolxaf.streamlit.app/)
 
+---
 
 <img src="screenshots/Home.png" width="700">
 
