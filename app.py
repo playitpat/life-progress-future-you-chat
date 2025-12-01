@@ -3,16 +3,13 @@ import json
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # On Streamlit Cloud, dotenv may not be installed; secrets will be used instead
+    pass
 from openai import OpenAI
-
-st.set_page_config(layout="wide")
-
-# Load environment variables first
-load_dotenv()
-
-# OpenAI client (uses OPENAI_API_KEY from environment)
-client = OpenAI()
 
 # ---------- Simple persistence layer ----------
 
