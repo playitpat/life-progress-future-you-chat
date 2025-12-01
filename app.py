@@ -11,6 +11,8 @@ except ImportError:
     pass
 from openai import OpenAI
 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 # ---------- Simple persistence layer ----------
 
 DATA_DIR = "data"
