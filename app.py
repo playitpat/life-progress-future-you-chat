@@ -11,7 +11,7 @@ except ImportError:
     pass
 from openai import OpenAI
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = OpenAI()  # Streamlit exposes secrets as env vars too
 
 # ---------- Simple persistence layer ----------
 
