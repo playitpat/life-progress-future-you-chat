@@ -3,15 +3,21 @@ import json
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    # On Streamlit Cloud, dotenv may not be installed; secrets will be used instead
-    pass
-from openai import OpenAI
 
-client = OpenAI()  # Streamlit exposes secrets as env vars too
+from openai import OpenAI  # no dotenv, direct import
+
+# Build OpenAI client from secrets or env var
+api_key = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+if not api_key:
+    st.error(
+        "OPENAI_API_KEY is not set. "
+        "Please configure it in Streamlit Cloud under 'Secrets' to use the chat feature."
+    )
+    #　We do NOT st.stop() here, so Home/Goals/Dashboard still work
+    client = None
+else:
+    client = OpenAI(api_key=api_key)
 
 # ---------- Simple persistence layer ----------
 
@@ -346,9 +352,8 @@ elif page == 'Chat with Future You':
     st.header('Chat with Future You')
     st.title("🧭 Chat with Future You")
 
-    # Guardrails
-    if not os.environ.get("OPENAI_API_KEY"):
-        st.error("OPENAI_API_KEY is not set. Please configure your API key in the environment to use this feature.")
+    if client is None:
+        st.error("OpenAI client is not configured. Check your API key in Streamlit secrets.")
     elif not st.session_state["goals"]:
         st.info("You do not have any goals yet. Go to **Set Goals** to create at least one goal.")
     elif not st.session_state["logs"]:
