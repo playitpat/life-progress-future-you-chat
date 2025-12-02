@@ -333,98 +333,73 @@ elif page == 'Dashboard':
 # ----------------------
 # Chat with Future You
 # ----------------------
-# ----------------------
-# Chat with Future You
-# ----------------------
 elif page == 'Chat with Future You':
     st.header('Chat with Future You')
     st.title("🧭 Chat with Future You")
 
-    # Try to import OpenAI only when this page is used
+    # Try to import OpenAI only inside this page
     try:
         from openai import OpenAI
     except ModuleNotFoundError:
         st.error(
-            "The 'openai' package is not available in this environment.\n\n"
-            "Make sure `openai` is listed in `requirements.txt`, push to GitHub, "
-            "and redeploy the app."
+            "The 'openai' package is not available.\n"
+            "Make sure it is listed in requirements.txt and redeploy the app."
         )
         st.stop()
 
-    # Resolve API key from env or Streamlit secrets
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key and "OPENAI_API_KEY" in st.secrets:
-        api_key = st.secrets["OPENAI_API_KEY"]
-
+    # Get API key (Streamlit secrets or environment)
+    api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
     if not api_key:
-        st.error(
-            "OPENAI_API_KEY is not set. Please configure it in Streamlit Cloud "
-            "under 'Secrets' to use this feature."
-        )
+        st.error("No OPENAI_API_KEY found in environment or Streamlit secrets.")
         st.stop()
 
     client = OpenAI(api_key=api_key)
 
-    # Guardrails on data availability
+    # Required data
     if not st.session_state["goals"]:
-        st.info("You do not have any goals yet. Go to **Set Goals** to create at least one goal.")
+        st.info("Please create at least one goal before using this page.")
         st.stop()
     if not st.session_state["logs"]:
-        st.info("You have not logged any progress yet. Go to **Log Today** to record some steps first.")
+        st.info("Please add at least one log entry before chatting with future you.")
         st.stop()
 
-    st.write(
-        "This chat uses your goals and real progress to simulate a conversation with a future version of you.  \n"
-        "It does not predict the future, it reasons from your habits and data."
-    )
-
-    # ---- Build data summary from goals and logs ----
+    # Text summaries
     logs_df = pd.DataFrame(st.session_state["logs"]).copy()
     logs_df["Date"] = pd.to_datetime(logs_df["Date"])
 
-    goals_df = pd.DataFrame(st.session_state["goals"]).copy()  # Goal, Category, Description
+    goals_df = pd.DataFrame(st.session_state["goals"]).copy()
 
-    # Focus on recent activity (last 30 days)
     cutoff = datetime.now().date() - pd.Timedelta(days=30)
-    recent_logs = logs_df[logs_df["Date"].dt.date >= cutoff] if not logs_df.empty else logs_df
+    recent_logs = logs_df[logs_df["Date"].dt.date >= cutoff]
 
-    # Aggregate per goal (qualitative: count of entries + last activity)
     if not recent_logs.empty:
         recent_summary = (
             recent_logs
             .groupby("Goal", as_index=False)
             .agg(
                 Entries=("Note", "count"),
-                Last_Activity=("Date", "max"),
+                Last_Activity=("Date", "max")
             )
         )
         recent_summary["Last_Activity"] = recent_summary["Last_Activity"].dt.strftime("%Y-%m-%d")
     else:
         recent_summary = pd.DataFrame(columns=["Goal", "Entries", "Last_Activity"])
 
-    # Text description of goals
-    goals_text_lines = []
-    for g in st.session_state["goals"]:
-        desc = g.get("Description") or ""
-        goals_text_lines.append(
-            f"- {g['Goal']} (Category: {g['Category']})" + (f" — {desc}" if desc else "")
-        )
-    goals_text = "\n".join(goals_text_lines)
+    goals_text = "\n".join(
+        f"- {g['Goal']} (Category: {g['Category']})" +
+        (f" — {g['Description']}" if g["Description"] else "")
+        for g in st.session_state["goals"]
+    )
 
-    # Text description of recent progress
-    progress_lines = []
     if not recent_summary.empty:
-        for _, row in recent_summary.iterrows():
-            progress_lines.append(
-                f"- {row['Goal']}: {row['Entries']} log(s) in the last 30 days, "
-                f"last activity on {row['Last_Activity']}."
-            )
+        progress_text = "\n".join(
+            f"- {row['Goal']}: {row['Entries']} log(s), last activity {row['Last_Activity']}."
+            for _, row in recent_summary.iterrows()
+        )
     else:
-        progress_lines.append("No activity logged in the last 30 days.")
+        progress_text = "No activity logged in the last 30 days."
 
-    progress_text = "\n".join(progress_lines)
-
-    # ---- Layout: left = controls, right = chat ----
+    # Layout
     left_col, right_col = st.columns([1, 2])
 
     with left_col:
@@ -444,25 +419,24 @@ elif page == 'Chat with Future You':
 
         user_question = st.text_area(
             "Your question",
-            placeholder="For example: Am I on the right track with my career and health goals?",
-            height=120
+            placeholder="Example: Am I on the right track?",
+            height=100
         )
 
         ask = st.button("✨ Talk to Future Me", use_container_width=True)
         clear_chat = st.button("🧹 Clear conversation", use_container_width=True)
 
-        st.markdown("---")
-        with st.expander("See summary of your current goals and recent activity"):
-            st.markdown("**Goals**")
-            st.text(goals_text or "No goals defined.")
-            st.markdown("**Recent activity (last 30 days)**")
+        with st.expander("Current goals & activity"):
+            st.markdown("**Goals:**")
+            st.text(goals_text or "No goals.")
+            st.markdown("**Last 30 days:**")
             st.text(progress_text)
 
     with right_col:
         st.subheader("Conversation")
 
         if not st.session_state["future_chat_history"]:
-            st.info("Your conversation with future you will appear here.")
+            st.info("Your conversation will appear here.")
         else:
             for msg in st.session_state["future_chat_history"]:
                 if msg["role"] == "user":
@@ -470,7 +444,7 @@ elif page == 'Chat with Future You':
                 else:
                     st.markdown(f"**Future You:** {msg['content']}")
 
-    # ---- Button logic ----
+    # ---- BUTTON LOGIC ----
 
     if clear_chat:
         st.session_state["future_chat_history"] = []
@@ -479,60 +453,51 @@ elif page == 'Chat with Future You':
 
     if ask:
         if not user_question.strip():
-            st.warning("Please enter a message before chatting with future you.")
-        else:
-            st.session_state["future_chat_history"].append(
-                {"role": "user", "content": user_question}
-            )
-            save_chat_to_disk()
+            st.warning("Enter a question first.")
+            st.stop()
 
-            system_prompt = f"""
-You are a future version of the user, speaking from {horizon} ahead in time.
-You know the goals they set and their recent progress.
-You are not magical or prophetic: you reason based on their habits and data.
+        st.session_state["future_chat_history"].append(
+            {"role": "user", "content": user_question}
+        )
+        save_chat_to_disk()
 
+        system_prompt = f"""
+You are the user's future self from {horizon}.
+You reason only from their goals and recent activity.
 Your tone is: {tone}.
+Respond in 3–6 short paragraphs.
+"""
 
-You should:
-- Refer to specific goals and activity.
-- Encourage reflection, not guilt.
-- Suggest 1–3 concrete next steps.
-- Keep the answer between 3 and 6 short paragraphs.
-            """.strip()
+        user_prompt = f"""
+Goals:
+{goals_text}
 
-            user_prompt = f"""
-Here are my current goals:
-{goals_text or "No goals defined."}
-
-Here is a summary of my recent activity in the last 30 days:
+Recent progress:
 {progress_text}
 
-I am asking my future self ({horizon} from now) this question:
+My question to my future self:
 "{user_question}"
-            """.strip()
+"""
 
-            try:
-                with st.spinner("Thinking as future you..."):
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt},
-                        ],
-                        temperature=0.7,
-                        max_tokens=600,
-                    )
-
-                answer = response.choices[0].message.content
-                st.session_state["future_chat_history"].append(
-                    {"role": "assistant", "content": answer}
+        try:
+            with st.spinner("Thinking as future you..."):
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.7,
+                    max_tokens=600,
                 )
-                save_chat_to_disk()
-                st.rerun()
 
-            except Exception as e:
-                st.error(f"Something went wrong while talking to future you: {e}")
+            answer = response.choices[0].message.content
 
+            st.session_state["future_chat_history"].append(
+                {"role": "assistant", "content": answer}
+            )
+            save_chat_to_disk()
+            st.rerun()
 
-                except Exception as e:
-                    st.error(f"Something went wrong while talking to future you: {e}")
+        except Exception as e:
+            st.error(f"OpenAI error: {e}")
