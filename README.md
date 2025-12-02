@@ -1,7 +1,7 @@
 # 🌱 Life Progress Dashboard + Future You Chatbot  
 *A Streamlit app that lets you set goals, track habits, and talk to a future version of yourself.*
 
-🔗 **Live App:** [https://life-progress-dashboard.streamlit.app/](https://playitpat-life-progress-future-you-chat-app-kolxaf.streamlit.app/)
+🔗 **Live App:** [https://life-progress-dashboard.streamlit.app/](https://life-progress-future-you-chat-sibf5ywvmpcci9a32pfjfe.streamlit.app/)
 
 ---
 
@@ -73,28 +73,6 @@ A coaching-style AI persona that:
 - Speaks as your “Future Self” 6 months to 5 years ahead  
 
 This is powered by a structured prompt system that includes your real activity and life goals.
-
----
-
-## ▶️ Getting Started
-
-### 1. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Add your API key
-Create a .env file in the project root and add:
-
-```bash
-OPENAI_API_KEY="your_api_key_here"
-```
-
-### 3. Run the app
-```bash
-streamlit run app.py
-```
 
 ---
 
