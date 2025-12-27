@@ -1,7 +1,7 @@
 # 🌱 Life Progress Dashboard + Future You Chatbot  
 *A Streamlit app that lets you set goals, track habits, and talk to a future version of yourself.*
 
-🔗 **Live App:** [https://life-progress-dashboard.streamlit.app/](https://life-progress-future-you-chat-sibf5ywvmpcci9a32pfjfe.streamlit.app/)
+🔗 **Live App (might be disabled due to inactivity):** [https://life-progress-dashboard.streamlit.app/](https://life-progress-future-you-chat-sibf5ywvmpcci9a32pfjfe.streamlit.app/)
 
 ---
 
